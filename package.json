@@ -1,0 +1,19 @@
+{
+  "name": "envlens",
+  "displayName": "envlens",
+  "description": "Warns when process.env / import.meta.env references aren't defined in any workspace .env file.",
+  "version": "1.0.0",
+  "publisher": "juninmd",
+  "license": "MIT",
+  "engines": { "vscode": "^1.75.0" },
+  "categories": ["Linters", "Other"],
+  "main": "./extension.js",
+  "activationEvents": ["onLanguage:javascript", "onLanguage:typescript"],
+  "contributes": {
+    "commands": [
+      { "command": "envlens.scan", "title": "envlens: Verificar variáveis de ambiente" }
+    ]
+  },
+  "scripts": { "test": "bun test" },
+  "devDependencies": { "@types/bun": "latest" }
+}

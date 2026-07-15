@@ -1,0 +1,5 @@
+.vscode/**
+tests/**
+*.vsix
+.gitignore
+bun.lock
