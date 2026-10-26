@@ -32,3 +32,28 @@ test("missingRefs ignores runtime + vite builtins", () => {
   const refs = findEnvRefs("process.env.NODE_ENV; import.meta.env.PROD; process.env.MISSING");
   expect(missingRefs(refs, new Set()).map((r) => r.name)).toEqual(["MISSING"]);
 });
+
+test("parseEnvKeys skips lines inside multiline quoted values", () => {
+  const keys = parseEnvKeys('CERT="-----BEGIN FAKE-----\nINNER=1\n-----END FAKE-----"\nREAL=2');
+  expect([...keys].sort()).toEqual(["CERT", "REAL"]);
+});
+
+test("parseEnvKeys handles single-quoted multiline and closed quotes on one line", () => {
+  const keys = parseEnvKeys("A='x\nB=1'\nC=\"ok\"\nD='it''s'\nE=2");
+  expect([...keys].sort()).toEqual(["A", "C", "D", "E"]);
+});
+
+test("parseEnvKeys accepts export followed by tab or several spaces", () => {
+  expect([...parseEnvKeys("export\tFOO=1\nexport   BAR=2")].sort()).toEqual(["BAR", "FOO"]);
+});
+
+test("parseEnvKeys handles CRLF, BOM, spaces around = and inline comments", () => {
+  const keys = parseEnvKeys("﻿A=1\r\nB = 2\r\nC=3 # note\r\n");
+  expect([...keys].sort()).toEqual(["A", "B", "C"]);
+});
+
+test("parseEnvKeys ignores dotted keys, bare '=' and non-string input", () => {
+  expect([...parseEnvKeys("A.B=1\n=\nOK=1")]).toEqual(["OK"]);
+  expect(parseEnvKeys("").size).toBe(0);
+  expect(parseEnvKeys(undefined).size).toBe(0);
+});

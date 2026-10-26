@@ -2,17 +2,24 @@
 
 const DEFAULT_KNOWN = ["NODE_ENV", "PATH", "HOME", "PWD", "CI"];
 
-/** Extract defined keys from a .env file's text. */
+/** Extract defined keys from a .env file's text. Never retain values. */
 function parseEnvKeys(text) {
   const keys = new Set();
-  for (const raw of String(text).split(/\r?\n/)) {
-    const line = raw.trim();
+  const lines = String(text).split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
     if (!line || line.startsWith("#")) continue;
-    const body = line.startsWith("export ") ? line.slice(7).trim() : line;
+    const body = line.replace(/^export\s+/, "");
     const eq = body.indexOf("=");
     if (eq < 1) continue;
     const key = body.slice(0, eq).trim();
-    if (/^[A-Za-z_][A-Za-z0-9_.]*$/.test(key)) keys.add(key);
+    if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) keys.add(key);
+    const value = body.slice(eq + 1).trim();
+    const quote = value[0];
+    // An unclosed quote opens a multiline value: skip lines until it closes.
+    if ((quote === '"' || quote === "'") && !value.includes(quote, 1)) {
+      while (++i < lines.length && !lines[i].includes(quote));
+    }
   }
   return keys;
 }
