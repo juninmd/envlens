@@ -14,6 +14,6 @@
       { "command": "envlens.scan", "title": "envlens: Verificar variáveis de ambiente" }
     ]
   },
-  "scripts": { "test": "bun test" },
+  "scripts": { "test": "node --test" },
   "devDependencies": { "@types/bun": "latest" }
 }

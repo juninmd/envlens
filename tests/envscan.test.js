@@ -1,9 +1,10 @@
-import { test, expect } from "bun:test";
-import { parseEnvKeys, findEnvRefs, missingRefs } from "../src/envscan.js";
+const { test } = require("node:test");
+const assert = require("node:assert/strict");
+const { parseEnvKeys, findEnvRefs, missingRefs } = require("../src/envscan.js");
 
 test("parseEnvKeys extracts keys, ignores comments/blank/export", () => {
   const keys = parseEnvKeys("# c\nexport API_KEY=1\nPORT=3000\n\nBAD LINE\n=nokey");
-  expect([...keys].sort()).toEqual(["API_KEY", "PORT"]);
+  assert.deepEqual([...keys].sort(), ["API_KEY", "PORT"]);
 });
 
 test("findEnvRefs catches the three access styles", () => {
@@ -12,48 +13,48 @@ test("findEnvRefs catches the three access styles", () => {
     const b = process.env['BAR'];
     const c = import.meta.env.BAZ;
   `;
-  expect(findEnvRefs(code).map((r) => r.name).sort()).toEqual(["BAR", "BAZ", "FOO"]);
+  assert.deepEqual(findEnvRefs(code).map((r) => r.name).sort(), ["BAR", "BAZ", "FOO"]);
 });
 
 test("findEnvRefs returns usable index/length", () => {
   const code = "x = process.env.FOO";
   const [ref] = findEnvRefs(code);
-  expect(code.slice(ref.index, ref.index + ref.length)).toBe("process.env.FOO");
+  assert.equal(code.slice(ref.index, ref.index + ref.length), "process.env.FOO");
 });
 
 test("missingRefs flags only undefined names", () => {
   const refs = findEnvRefs("process.env.FOO; process.env.BAR");
   const defined = new Set(["FOO"]);
   const missing = missingRefs(refs, defined);
-  expect(missing.map((r) => r.name)).toEqual(["BAR"]);
+  assert.deepEqual(missing.map((r) => r.name), ["BAR"]);
 });
 
 test("missingRefs ignores runtime + vite builtins", () => {
   const refs = findEnvRefs("process.env.NODE_ENV; import.meta.env.PROD; process.env.MISSING");
-  expect(missingRefs(refs, new Set()).map((r) => r.name)).toEqual(["MISSING"]);
+  assert.deepEqual(missingRefs(refs, new Set()).map((r) => r.name), ["MISSING"]);
 });
 
 test("parseEnvKeys skips lines inside multiline quoted values", () => {
   const keys = parseEnvKeys('CERT="-----BEGIN FAKE-----\nINNER=1\n-----END FAKE-----"\nREAL=2');
-  expect([...keys].sort()).toEqual(["CERT", "REAL"]);
+  assert.deepEqual([...keys].sort(), ["CERT", "REAL"]);
 });
 
 test("parseEnvKeys handles single-quoted multiline and closed quotes on one line", () => {
   const keys = parseEnvKeys("A='x\nB=1'\nC=\"ok\"\nD='it''s'\nE=2");
-  expect([...keys].sort()).toEqual(["A", "C", "D", "E"]);
+  assert.deepEqual([...keys].sort(), ["A", "C", "D", "E"]);
 });
 
 test("parseEnvKeys accepts export followed by tab or several spaces", () => {
-  expect([...parseEnvKeys("export\tFOO=1\nexport   BAR=2")].sort()).toEqual(["BAR", "FOO"]);
+  assert.deepEqual([...parseEnvKeys("export\tFOO=1\nexport   BAR=2")].sort(), ["BAR", "FOO"]);
 });
 
 test("parseEnvKeys handles CRLF, BOM, spaces around = and inline comments", () => {
   const keys = parseEnvKeys("﻿A=1\r\nB = 2\r\nC=3 # note\r\n");
-  expect([...keys].sort()).toEqual(["A", "B", "C"]);
+  assert.deepEqual([...keys].sort(), ["A", "B", "C"]);
 });
 
 test("parseEnvKeys ignores dotted keys, bare '=' and non-string input", () => {
-  expect([...parseEnvKeys("A.B=1\n=\nOK=1")]).toEqual(["OK"]);
-  expect(parseEnvKeys("").size).toBe(0);
-  expect(parseEnvKeys(undefined).size).toBe(0);
+  assert.deepEqual([...parseEnvKeys("A.B=1\n=\nOK=1")], ["OK"]);
+  assert.equal(parseEnvKeys("").size, 0);
+  assert.equal(parseEnvKeys(undefined).size, 0);
 });
